@@ -2,29 +2,17 @@
 #include <time.h>
 using namespace sf;
 
-int minesweeper()
+const int GRID_SIZE = 10;
+const int BUFFER_SIZE = 12;
+const int CELL_SIZE = 32;
+const int WINDOW_SIZE = 400;
+const int MINE_VALUE = 9;
+const int HIDDEN_CELL = 10;
+const int FLAG_CELL = 11;
+const int MINE_PROBABILITY = 5;
+
+void initializeGame(int mineGrid[BUFFER_SIZE][BUFFER_SIZE], int visibleGrid[BUFFER_SIZE][BUFFER_SIZE])
 {
-    srand(time(0));
-
-    const int GRID_SIZE = 10;
-    const int BUFFER_SIZE = 12;
-    const int CELL_SIZE = 32;
-    const int WINDOW_SIZE = 400;
-    const int MINE_VALUE = 9;
-    const int HIDDEN_CELL = 10;
-    const int FLAG_CELL = 11;
-    const int MINE_PROBABILITY = 5;
-
-    RenderWindow window(VideoMode(WINDOW_SIZE, WINDOW_SIZE), "Minesweeper!");
-
-    int cellSize = CELL_SIZE;
-    int mineGrid[BUFFER_SIZE][BUFFER_SIZE];
-    int visibleGrid[BUFFER_SIZE][BUFFER_SIZE]; //for showing
-
-    Texture texture;
-    texture.loadFromFile("images/minesweeper/tiles.jpg");
-    Sprite sprite(texture);
-
     for (int i=1;i<=GRID_SIZE;i++)
      for (int j=1;j<=GRID_SIZE;j++)
       {
@@ -32,7 +20,10 @@ int minesweeper()
         if (rand()%MINE_PROBABILITY==0)  mineGrid[i][j]=MINE_VALUE;
         else mineGrid[i][j]=0;
       }
+}
 
+void calculateAdjacentMines(int mineGrid[BUFFER_SIZE][BUFFER_SIZE])
+{
     for (int i=1;i<=GRID_SIZE;i++)
      for (int j=1;j<=GRID_SIZE;j++)
       {
@@ -48,6 +39,68 @@ int minesweeper()
         if (mineGrid[i+1][j-1]==MINE_VALUE) adjacentMines++;
         mineGrid[i][j]=adjacentMines;
       }
+}
+
+void loadResources(Texture& texture, Sprite& sprite)
+{
+    texture.loadFromFile("images/minesweeper/tiles.jpg");
+    sprite.setTexture(texture);
+}
+
+void handleInput(RenderWindow& window, Event& event, int visibleGrid[BUFFER_SIZE][BUFFER_SIZE], 
+                 int mineGrid[BUFFER_SIZE][BUFFER_SIZE], int x, int y)
+{
+    if (event.type == Event::Closed)
+        window.close();
+
+    if (event.type == Event::MouseButtonPressed)
+      if (event.key.code == Mouse::Left) visibleGrid[x][y]=mineGrid[x][y];
+      else if (event.key.code == Mouse::Right) visibleGrid[x][y]=FLAG_CELL;
+}
+
+void updateGameState(int visibleGrid[BUFFER_SIZE][BUFFER_SIZE], int mineGrid[BUFFER_SIZE][BUFFER_SIZE], int x, int y)
+{
+    if (visibleGrid[x][y]==MINE_VALUE)
+    {
+        for (int i=1;i<=GRID_SIZE;i++)
+         for (int j=1;j<=GRID_SIZE;j++)
+          {
+            visibleGrid[i][j]=mineGrid[i][j];
+          }
+    }
+}
+
+void renderGame(RenderWindow& window, Sprite& sprite, int visibleGrid[BUFFER_SIZE][BUFFER_SIZE], int cellSize)
+{
+    window.clear(Color::White);
+
+    for (int i=1;i<=GRID_SIZE;i++)
+     for (int j=1;j<=GRID_SIZE;j++)
+      {
+       sprite.setTextureRect(IntRect(visibleGrid[i][j]*cellSize,0,cellSize,cellSize));
+       sprite.setPosition(i*cellSize, j*cellSize);
+       window.draw(sprite);
+      }
+
+    window.display();
+}
+
+int minesweeper()
+{
+    srand(time(0));
+
+    RenderWindow window(VideoMode(WINDOW_SIZE, WINDOW_SIZE), "Minesweeper!");
+
+    int cellSize = CELL_SIZE;
+    int mineGrid[BUFFER_SIZE][BUFFER_SIZE];
+    int visibleGrid[BUFFER_SIZE][BUFFER_SIZE]; //for showing
+
+    Texture texture;
+    Sprite sprite;
+    loadResources(texture, sprite);
+
+    initializeGame(mineGrid, visibleGrid);
+    calculateAdjacentMines(mineGrid);
 
     while (window.isOpen())
     {
@@ -58,26 +111,11 @@ int minesweeper()
         Event event;
         while (window.pollEvent(event))
         {
-            if (event.type == Event::Closed)
-                window.close();
-
-            if (event.type == Event::MouseButtonPressed)
-              if (event.key.code == Mouse::Left) visibleGrid[x][y]=mineGrid[x][y];
-              else if (event.key.code == Mouse::Right) visibleGrid[x][y]=FLAG_CELL;
+            handleInput(window, event, visibleGrid, mineGrid, x, y);
         }
 
-        window.clear(Color::White);
-
-        for (int i=1;i<=GRID_SIZE;i++)
-         for (int j=1;j<=GRID_SIZE;j++)
-          {
-           if (visibleGrid[x][y]==MINE_VALUE) visibleGrid[i][j]=mineGrid[i][j];
-           sprite.setTextureRect(IntRect(visibleGrid[i][j]*cellSize,0,cellSize,cellSize));
-           sprite.setPosition(i*cellSize, j*cellSize);
-           window.draw(sprite);
-          }
-
-        window.display();
+        updateGameState(visibleGrid, mineGrid, x, y);
+        renderGame(window, sprite, visibleGrid, cellSize);
     }
 
     return 0;
