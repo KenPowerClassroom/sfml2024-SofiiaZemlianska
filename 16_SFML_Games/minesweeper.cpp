@@ -17,7 +17,8 @@ void initializeGame(int mineGrid[BUFFER_SIZE][BUFFER_SIZE], int visibleGrid[BUFF
      for (int j=1;j<=GRID_SIZE;j++)
       {
         visibleGrid[i][j]=HIDDEN_CELL;
-        if (rand()%MINE_PROBABILITY==0)  mineGrid[i][j]=MINE_VALUE;
+        bool shouldPlaceMine = (rand()%MINE_PROBABILITY==0);
+        if (shouldPlaceMine)  mineGrid[i][j]=MINE_VALUE;
         else mineGrid[i][j]=0;
       }
 }
@@ -28,7 +29,8 @@ void calculateAdjacentMines(int mineGrid[BUFFER_SIZE][BUFFER_SIZE])
      for (int j=1;j<=GRID_SIZE;j++)
       {
         int adjacentMines=0;
-        if (mineGrid[i][j]==MINE_VALUE) continue;
+        bool currentCellIsMine = (mineGrid[i][j]==MINE_VALUE);
+        if (currentCellIsMine) continue;
         if (mineGrid[i+1][j]==MINE_VALUE) adjacentMines++;
         if (mineGrid[i][j+1]==MINE_VALUE) adjacentMines++;
         if (mineGrid[i-1][j]==MINE_VALUE) adjacentMines++;
@@ -54,13 +56,19 @@ void handleInput(RenderWindow& window, Event& event, int visibleGrid[BUFFER_SIZE
         window.close();
 
     if (event.type == Event::MouseButtonPressed)
-      if (event.key.code == Mouse::Left) visibleGrid[x][y]=mineGrid[x][y];
-      else if (event.key.code == Mouse::Right) visibleGrid[x][y]=FLAG_CELL;
+    {
+      bool isLeftClick = (event.key.code == Mouse::Left);
+      bool isRightClick = (event.key.code == Mouse::Right);
+      
+      if (isLeftClick) visibleGrid[x][y]=mineGrid[x][y];
+      else if (isRightClick) visibleGrid[x][y]=FLAG_CELL;
+    }
 }
 
 void updateGameState(int visibleGrid[BUFFER_SIZE][BUFFER_SIZE], int mineGrid[BUFFER_SIZE][BUFFER_SIZE], int x, int y)
 {
-    if (visibleGrid[x][y]==MINE_VALUE)
+    bool mineWasClicked = (visibleGrid[x][y]==MINE_VALUE);
+    if (mineWasClicked)
     {
         for (int i=1;i<=GRID_SIZE;i++)
          for (int j=1;j<=GRID_SIZE;j++)
@@ -77,8 +85,13 @@ void renderGame(RenderWindow& window, Sprite& sprite, int visibleGrid[BUFFER_SIZ
     for (int i=1;i<=GRID_SIZE;i++)
      for (int j=1;j<=GRID_SIZE;j++)
       {
-       sprite.setTextureRect(IntRect(visibleGrid[i][j]*cellSize,0,cellSize,cellSize));
-       sprite.setPosition(i*cellSize, j*cellSize);
+       int cellValue = visibleGrid[i][j];
+       int textureXOffset = cellValue * cellSize;
+       int spriteXPosition = i * cellSize;
+       int spriteYPosition = j * cellSize;
+       
+       sprite.setTextureRect(IntRect(textureXOffset, 0, cellSize, cellSize));
+       sprite.setPosition(spriteXPosition, spriteYPosition);
        window.draw(sprite);
       }
 
@@ -104,17 +117,17 @@ int minesweeper()
 
     while (window.isOpen())
     {
-        Vector2i pos = Mouse::getPosition(window);
-        int x = pos.x/cellSize;
-        int y = pos.y/cellSize;
+        Vector2i mousePosition = Mouse::getPosition(window);
+        int gridX = mousePosition.x / cellSize;
+        int gridY = mousePosition.y / cellSize;
 
         Event event;
         while (window.pollEvent(event))
         {
-            handleInput(window, event, visibleGrid, mineGrid, x, y);
+            handleInput(window, event, visibleGrid, mineGrid, gridX, gridY);
         }
 
-        updateGameState(visibleGrid, mineGrid, x, y);
+        updateGameState(visibleGrid, mineGrid, gridX, gridY);
         renderGame(window, sprite, visibleGrid, cellSize);
     }
 
