@@ -6,69 +6,69 @@ int minesweeper()
 {
     srand(time(0));
 
-    RenderWindow app(VideoMode(400, 400), "Minesweeper!");
+    RenderWindow window(VideoMode(400, 400), "Minesweeper!");
 
-    int w=32;
-    int grid[12][12];
-    int sgrid[12][12]; //for showing
+    int cellSize = 32;
+    int mineGrid[12][12];
+    int visibleGrid[12][12]; //for showing
 
-    Texture t;
-    t.loadFromFile("images/minesweeper/tiles.jpg");
-    Sprite s(t);
+    Texture texture;
+    texture.loadFromFile("images/minesweeper/tiles.jpg");
+    Sprite sprite(texture);
 
     for (int i=1;i<=10;i++)
      for (int j=1;j<=10;j++)
       {
-        sgrid[i][j]=10;
-        if (rand()%5==0)  grid[i][j]=9;
-        else grid[i][j]=0;
+        visibleGrid[i][j]=10;
+        if (rand()%5==0)  mineGrid[i][j]=9;
+        else mineGrid[i][j]=0;
       }
 
     for (int i=1;i<=10;i++)
      for (int j=1;j<=10;j++)
       {
-        int n=0;
-        if (grid[i][j]==9) continue;
-        if (grid[i+1][j]==9) n++;
-        if (grid[i][j+1]==9) n++;
-        if (grid[i-1][j]==9) n++;
-        if (grid[i][j-1]==9) n++;
-        if (grid[i+1][j+1]==9) n++;
-        if (grid[i-1][j-1]==9) n++;
-        if (grid[i-1][j+1]==9) n++;
-        if (grid[i+1][j-1]==9) n++;
-        grid[i][j]=n;
+        int adjacentMines=0;
+        if (mineGrid[i][j]==9) continue;
+        if (mineGrid[i+1][j]==9) adjacentMines++;
+        if (mineGrid[i][j+1]==9) adjacentMines++;
+        if (mineGrid[i-1][j]==9) adjacentMines++;
+        if (mineGrid[i][j-1]==9) adjacentMines++;
+        if (mineGrid[i+1][j+1]==9) adjacentMines++;
+        if (mineGrid[i-1][j-1]==9) adjacentMines++;
+        if (mineGrid[i-1][j+1]==9) adjacentMines++;
+        if (mineGrid[i+1][j-1]==9) adjacentMines++;
+        mineGrid[i][j]=adjacentMines;
       }
 
-    while (app.isOpen())
+    while (window.isOpen())
     {
-        Vector2i pos = Mouse::getPosition(app);
-        int x = pos.x/w;
-        int y = pos.y/w;
+        Vector2i pos = Mouse::getPosition(window);
+        int x = pos.x/cellSize;
+        int y = pos.y/cellSize;
 
-        Event e;
-        while (app.pollEvent(e))
+        Event event;
+        while (window.pollEvent(event))
         {
-            if (e.type == Event::Closed)
-                app.close();
+            if (event.type == Event::Closed)
+                window.close();
 
-            if (e.type == Event::MouseButtonPressed)
-              if (e.key.code == Mouse::Left) sgrid[x][y]=grid[x][y];
-              else if (e.key.code == Mouse::Right) sgrid[x][y]=11;
+            if (event.type == Event::MouseButtonPressed)
+              if (event.key.code == Mouse::Left) visibleGrid[x][y]=mineGrid[x][y];
+              else if (event.key.code == Mouse::Right) visibleGrid[x][y]=11;
         }
 
-        app.clear(Color::White);
+        window.clear(Color::White);
 
         for (int i=1;i<=10;i++)
          for (int j=1;j<=10;j++)
           {
-           if (sgrid[x][y]==9) sgrid[i][j]=grid[i][j];
-           s.setTextureRect(IntRect(sgrid[i][j]*w,0,w,w));
-           s.setPosition(i*w, j*w);
-           app.draw(s);
+           if (visibleGrid[x][y]==9) visibleGrid[i][j]=mineGrid[i][j];
+           sprite.setTextureRect(IntRect(visibleGrid[i][j]*cellSize,0,cellSize,cellSize));
+           sprite.setPosition(i*cellSize, j*cellSize);
+           window.draw(sprite);
           }
 
-        app.display();
+        window.display();
     }
 
     return 0;
